@@ -9,7 +9,7 @@ import (
 
 type Relief [][]rune
 
-func process(in *bufio.Reader, out *bufio.Writer) {
+func Process(in *bufio.Reader, out *bufio.Writer) {
 	var t int
 	fmt.Fscanln(in, &t)
 	
@@ -60,5 +60,5 @@ func main() {
 	out := bufio.NewWriter(os.Stdout)
 	defer out.Flush()
 
-	process(in, out)
+	Process(in, out)
 }

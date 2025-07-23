@@ -8,11 +8,7 @@ import (
 	"strings"
 )
 
-func main() {
-	input := bufio.NewReader(os.Stdin)
-	output := bufio.NewWriter(os.Stdout)
-	defer output.Flush()
-
+func Process(input *bufio.Reader, output *bufio.Writer) {
 	var t int
 	fmt.Fscan(input, &t)
 	input.ReadString('\n')
@@ -105,4 +101,12 @@ func main() {
 			fmt.Fprintf(output, "%s is %s.\n", name, action)
 		}
 	}
+}
+
+func main() {
+	input := bufio.NewReader(os.Stdin)
+	output := bufio.NewWriter(os.Stdout)
+	defer output.Flush()
+
+	Process(input, output)
 }

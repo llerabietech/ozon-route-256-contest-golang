@@ -17,7 +17,7 @@ type Position struct {
 }
 
 // Основная функция обработки входных данных и построения маршрутов
-func process(in *bufio.Reader, out *bufio.Writer) {
+func Process(in *bufio.Reader, out *bufio.Writer) {
 	var n int
 	fmt.Fscanln(in, &n)
 
@@ -165,5 +165,5 @@ func main() {
 	out := bufio.NewWriter(os.Stdout)
 	defer out.Flush()
 
-	process(in, out)
+	Process(in, out)
 }
