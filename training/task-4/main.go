@@ -4,7 +4,106 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
+
+// Структура для хранения позиции гексагона
+type Position struct {
+	x int
+	y int
+}
+
+func Process(in *bufio.Reader, out *bufio.Writer) {
+	var t int
+	fmt.Fscanln(in, &t)
+	for i := 0; i < t; i++ {
+		var r, c int
+		fmt.Fscanln(in, &r, &c)
+
+		// Читаем карту как двумерный срез строк
+		field := make([][]string, 0, r)
+		for j := 0; j < r; j++ {
+			xStr, _ := in.ReadString('\n')
+			xStr = strings.Trim(xStr, "\n")
+			x := strings.Split(xStr, "")
+			field = append(field, x)
+		}
+
+		isValid := checkField(field)
+		if isValid {
+			fmt.Fprintln(out, "YES")
+			continue
+		}
+		fmt.Fprintln(out, "NO")
+	}
+}
+
+// Проверяет, что все регионы на карте связны
+func checkField(field [][]string) bool {
+	hexes := map[string]map[Position]bool{}
+	// Собираем все гексагоны по регионам (буквам)
+	for r, x := range field {
+		for c, v := range x {
+			if v != "." {
+				p := Position{r, c}
+				_, exists := hexes[v]
+				if !exists {
+					hexes[v] = map[Position]bool{}
+				}
+				hexes[v][p] = false // изначально не посещён
+			}
+		}
+	}
+
+	// Для каждого региона запускаем обход из одной клетки
+	for _, Positiones := range hexes {
+		for p := range Positiones {
+			visit(Positiones, p)
+			break
+		}
+	}
+
+	// Проверяем, что все клетки каждого региона были посещены
+	for _, Positiones := range hexes {
+		for _, visited := range Positiones {
+			if !visited {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// Возвращает список соседей для гексагона в гекс-сетке
+func getNextMove(p Position) []Position {
+	return []Position{
+		{p.x, p.y - 2},     // Влево
+		{p.x, p.y + 2},     // Вправо
+		{p.x - 1, p.y - 1}, // Вверх-влево
+		{p.x - 1, p.y + 1}, // Вверх-вправо
+		{p.x + 1, p.y - 1}, // Вниз-влево
+		{p.x + 1, p.y + 1}, // Вниз-вправо
+	}
+}
+
+// Рекурсивно помечает все достижимые клетки региона как посещённые
+func visit(Positiones map[Position]bool, p Position) {
+	visited, exists := Positiones[p]
+	if !exists {
+		return // если клетки нет в регионе, выходим
+	}
+	if visited {
+		return // если уже посещена, выходим
+	}
+
+	Positiones[p] = true // помечаем как посещённую
+
+	nextPositiones := getNextMove(p)
+	for _, nextPosition := range nextPositiones {
+		visit(Positiones, nextPosition)
+	}
+}
 
 func main() {
 	in := bufio.NewReader(os.Stdin)
@@ -12,80 +111,4 @@ func main() {
 	defer out.Flush()
 
 	Process(in, out)
-}
-
-func Process(in *bufio.Reader, out *bufio.Writer) {
-	var t int
-	fmt.Fscanln(in, &t)
-	for test := 0; test < t; test++ {
-		var n, m int
-		fmt.Fscanln(in, &n, &m)
-		field := make([]string, n)
-		for i := 0; i < n; i++ {
-			fmt.Fscanln(in, &field[i])
-		}
-
-		// Сохраняем координаты всех гексагонов по регионам
-		type coord struct{ x, y int }
-		regions := make(map[byte][]coord)
-		for i := 0; i < n; i++ {
-			for j := 0; j < m; j++ {
-				c := field[i][j]
-				if c >= 'A' && c <= 'Z' {
-					regions[c] = append(regions[c], coord{i, j})
-				}
-			}
-		}
-
-		// Смещения для соседей (гексагональная сетка)
-		// Для чётных и нечётных строк разный набор соседей
-		var evenD = [][2]int{{-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, 0}, {1, 1}}  // чётная строка (i%2==0)
-		var oddD = [][2]int{{-1, -1}, {-1, 0}, {0, -1}, {0, 1}, {1, -1}, {1, 0}} // нечётная строка (i%2==1)
-
-		ok := true
-		used := make([][]bool, n)
-		for i := range used {
-			used[i] = make([]bool, m)
-		}
-
-		for region, cells := range regions {
-			// Сбросить used для этого региона
-			for i := range used {
-				for j := range used[i] {
-					used[i][j] = false
-				}
-			}
-			// BFS
-			queue := []coord{cells[0]}
-			used[cells[0].x][cells[0].y] = true
-			count := 1
-			for len(queue) > 0 {
-				cur := queue[0]
-				queue = queue[1:]
-				var dirs [][2]int
-				if cur.x%2 == 1 {
-					dirs = evenD
-				} else {
-					dirs = oddD
-				}
-				for _, d := range dirs {
-					nx, ny := cur.x+d[0], cur.y+d[1]
-					if nx >= 0 && nx < n && ny >= 0 && ny < m && !used[nx][ny] && field[nx][ny] == region {
-						used[nx][ny] = true
-						queue = append(queue, coord{nx, ny})
-						count++
-					}
-				}
-			}
-			if count != len(cells) {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			fmt.Fprintln(out, "YES")
-		} else {
-			fmt.Fprintln(out, "NO")
-		}
-	}
 }
